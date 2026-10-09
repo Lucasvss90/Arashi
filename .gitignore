@@ -1,0 +1,39 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Caches e ferramentas de análise
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Ambientes virtuais
+venv/
+env/
+ENV/
+.env/
+.venv/
+
+# Variáveis de ambiente e segredos
+.env
+*.env.local
+
+# Bancos de dados locais
+*.db
+*.sqlite
+*.sqlite3
+arashi.db
+instance/*.db
+
+# IDEs e editores
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini

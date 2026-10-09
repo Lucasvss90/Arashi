@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  arashi-app:
+    build: .
+    container_name: arashi_app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      # Persistência do banco de dados SQLite local
+      - ./instance:/app/instance
+    environment:
+      - SECRET_KEY=arashi_super_secret_key_2026
+      - FLASK_DEBUG=False
