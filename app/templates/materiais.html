@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Catálogo de Matérias-Primas - Arashi Maker{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Cabeçalho da Ficha Técnica -->
+    <div class="page-header">
+        <div class="page-title-group">
+            <span class="page-badge">Ficha Técnica • Engenharia de Produto</span>
+            <h2>Catálogo de Insumos & Matérias-Primas</h2>
+            <p>Definição técnica dos insumos utilizados na manufatura aditiva e montagem de arte sacra.</p>
+        </div>
+        <div class="page-actions">
+            <button class="btn btn-gold" onclick="abrirModalCatalogo()">+ Cadastrar Novo Insumo</button>
+        </div>
+    </div>
+
+    <!-- Filtros de Categoria em Pílulas -->
+    <div class="category-filters">
+        <button class="filter-pill active" onclick="filtrarCategoria('TODOS', this)">
+            <span>🌐 Todos os Insumos</span>
+            <span class="count-badge" id="count-todos">0</span>
+        </button>
+        <button class="filter-pill" onclick="filtrarCategoria('FILAMENTO', this)">
+            <span>🧵 Filamentos 3D</span>
+            <span class="count-badge" id="count-filamento">0</span>
+        </button>
+        <button class="filter-pill" onclick="filtrarCategoria('ELETRONICO_LED', this)">
+            <span>💡 LEDs & Iluminação</span>
+            <span class="count-badge" id="count-led">0</span>
+        </button>
+        <button class="filter-pill" onclick="filtrarCategoria('FIXACAO_IMAS', this)">
+            <span>🧲 Fixação & Ímãs</span>
+            <span class="count-badge" id="count-imas">0</span>
+        </button>
+        <button class="filter-pill" onclick="filtrarCategoria('CONSUMIVEL_ACABAMENTO', this)">
+            <span>🛠️ Consumíveis & Acabamento</span>
+            <span class="count-badge" id="count-consumivel">0</span>
+        </button>
+    </div>
+
+    <!-- Tabela do Catálogo -->
+    <section class="panel">
+        <div class="panel-header">
+            <div class="panel-title-group">
+                <span class="panel-dot"></span>
+                <h3 id="titulo-tabela-catalogo">Itens Cadastrados na Ficha Técnica</h3>
+            </div>
+            <div class="search-box">
+                <input type="text" id="busca-catalogo" class="form-control form-control-sm" placeholder="🔍 Buscar por nome, marca ou cor..." oninput="filtrarPorTexto()">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table" id="tabela-catalogo">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Insumo / Especificação</th>
+                        <th>Categoria</th>
+                        <th>Atributos Técnicos</th>
+                        <th>Unidade</th>
+                        <th>Estoque Mínimo</th>
+                        <th>Fornecedor Padrão</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-catalogo">
+                    <tr><td colspan="8" class="text-center">Carregando catálogo de insumos...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<!-- Modal de Cadastro / Edição de Matéria-Prima -->
+<div id="modal-catalogo" class="modal">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h4 id="modal-catalogo-titulo">Cadastrar Insumo na Ficha Técnica</h4>
+            <button class="modal-close" onclick="fecharModal('modal-catalogo')">&times;</button>
+        </div>
+        <form id="form-catalogo" onsubmit="salvarItemCatalogo(event)">
+            <input type="hidden" id="cat-id" value="">
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label>Categoria do Insumo *</label>
+                    <select id="cat-categoria" class="form-control" required onchange="aoMudarCategoria()">
+                        <option value="FILAMENTO">🧵 Filamento para Impressão 3D</option>
+                        <option value="ELETRONICO_LED">💡 Eletrônico / Vela LED / USB</option>
+                        <option value="FIXACAO_IMAS">🧲 Fixação / Ímã de Neodímio</option>
+                        <option value="CONSUMIVEL_ACABAMENTO">🛠️ Consumível / Cola / Verniz / Lixa</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Nome / Descrição Comercial *</label>
+                    <input type="text" id="cat-nome" class="form-control" placeholder="ex: PLA Silk Ouro Nobre 1.75mm" required>
+                </div>
+            </div>
+
+            <!-- Campos Específicos para Filamento (condicionais) -->
+            <div id="campos-filamento" class="highlight-box">
+                <div class="box-title">⚙️ Ficha Técnica do Filamento</div>
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label>Marca do Fabricante</label>
+                        <input type="text" id="cat-marca" class="form-control" placeholder="ex: Voolt3D, Creality, Elegoo">
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de Polímero</label>
+                        <input type="text" id="cat-polimero" class="form-control" placeholder="ex: PLA Silk, PLA Matte, PETG, TPU" list="lista-polimeros">
+                        <datalist id="lista-polimeros">
+                            <option value="PLA Silk">
+                            <option value="PLA Matte">
+                            <option value="PLA Velvet">
+                            <option value="PLA Standard">
+                            <option value="PETG">
+                            <option value="TPU Flexível">
+                            <option value="ABS">
+                            <option value="Resina Standard">
+                        </datalist>
+                    </div>
+                    <div class="form-group">
+                        <label>Cor / Tonalidade</label>
+                        <input type="text" id="cat-cor" class="form-control" placeholder="ex: Dourado Ouro, Bronze Sacro, Marfim">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label>Unidade de Medida</label>
+                    <select id="cat-unidade" class="form-control">
+                        <option value="UN">Unidade (UN)</option>
+                        <option value="G">Gramas (G)</option>
+                        <option value="KG">Quilos (KG)</option>
+                        <option value="ML">Mililitros (ML)</option>
+                        <option value="M">Metros (M)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Estoque Mínimo de Segurança</label>
+                    <input type="number" id="cat-estoque-min" class="form-control" value="1" min="0" step="1">
+                </div>
+                <div class="form-group">
+                    <label>Fornecedor / Loja Padrão</label>
+                    <input type="text" id="cat-fornecedor" class="form-control" placeholder="ex: Shopee Voolt3D, Mercado Livre">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="fecharModal('modal-catalogo')">Cancelar</button>
+                <button type="submit" class="btn btn-gold">Salvar Ficha Técnica</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/materiais.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}Gestão de Estoque & Entradas - Arashi Maker{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Cabeçalho de Estoque -->
+    <div class="page-header">
+        <div class="page-title-group">
+            <span class="page-badge">Controle Físico • Almoxarifado Industrial</span>
+            <h2>Gestão de Estoque & Movimentações</h2>
+            <p>Rastreabilidade por carretel de filamento, saldo de componentes e registro de notas de compra.</p>
+        </div>
+        <div class="page-actions">
+            <button class="btn btn-gold" onclick="abrirModalEntrada()">+ Lançar Entrada de Compra</button>
+            <a href="{{ url_for('main.materiais') }}" class="btn btn-outline">+ Nova Ficha Técnica</a>
+        </div>
+    </div>
+
+    <!-- Cards de Métricas do Almoxarifado -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-icon-wrapper gold-glow">
+                <span class="metric-icon">🧵</span>
+            </div>
+            <div class="metric-info">
+                <span class="metric-label">Carretéis Ativos</span>
+                <span class="metric-value" id="est-carreteis-total">-</span>
+                <small class="metric-sub" id="est-filamento-gramas">- g disponíveis</small>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon-wrapper blue-glow">
+                <span class="metric-icon">💡</span>
+            </div>
+            <div class="metric-info">
+                <span class="metric-label">Componentes & Insumos</span>
+                <span class="metric-value" id="est-componentes-total">-</span>
+                <small class="metric-sub">LEDs, ímãs e consumíveis</small>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon-wrapper red-glow">
+                <span class="metric-icon">⚠️</span>
+            </div>
+            <div class="metric-info">
+                <span class="metric-label">Alertas de Reposição</span>
+                <span class="metric-value" id="est-alertas-total">0</span>
+                <small class="metric-sub" id="est-alertas-desc">Abaixo do estoque mínimo</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Abas de Visualização do Estoque -->
+    <div class="tabs-nav">
+        <button class="tab-button active" onclick="trocarAbaEstoque('aba-carreteis', this)">
+            <span>🧵 Carretéis de Filamento (Rastreio Unitário)</span>
+        </button>
+        <button class="tab-button" onclick="trocarAbaEstoque('aba-almoxarifado', this)">
+            <span>📦 Almoxarifado de Componentes (LEDs, Ímãs)</span>
+        </button>
+        <button class="tab-button" onclick="trocarAbaEstoque('aba-historico', this)">
+            <span>📜 Histórico de Entradas & Compras</span>
+        </button>
+    </div>
+
+    <!-- ABA 1: Carretéis de Filamento -->
+    <section id="aba-carreteis" class="tab-content active">
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <span class="panel-dot"></span>
+                    <h3>Carretéis Ativos na Fábrica (Baixa Grama a Grama no PCP)</h3>
+                </div>
+                <button class="btn btn-gold btn-sm" onclick="abrirModalEntradaFilamento()">+ Novo Carretel</button>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table" id="tabela-carreteis">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Insumo / Ficha Técnica</th>
+                            <th>Marca</th>
+                            <th>Polímero / Cor</th>
+                            <th>Nível do Carretel</th>
+                            <th>Peso Atual / Inicial</th>
+                            <th>Custo/kg</th>
+                            <th>Lote / NF</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-carreteis">
+                        <tr><td colspan="9" class="text-center">Carregando carretéis de filamento...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ABA 2: Almoxarifado de Componentes -->
+    <section id="aba-almoxarifado" class="tab-content">
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <span class="panel-dot"></span>
+                    <h3>Almoxarifado de Componentes Discretos & Consumíveis</h3>
+                </div>
+                <button class="btn btn-gold btn-sm" onclick="abrirModalEntradaInsumo()">+ Entrada de Componente</button>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table" id="tabela-almoxarifado">
+                    <thead>
+                        <tr>
+                            <th>Insumo</th>
+                            <th>Categoria</th>
+                            <th>Saldo Físico Atual</th>
+                            <th>Unidade</th>
+                            <th>Estoque Mínimo</th>
+                            <th>Fornecedor Padrão</th>
+                            <th>Condição de Reposição</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-almoxarifado">
+                        <tr><td colspan="8" class="text-center">Carregando almoxarifado de componentes...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ABA 3: Histórico de Entradas -->
+    <section id="aba-historico" class="tab-content">
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <span class="panel-dot"></span>
+                    <h3>Registro Histórico de Compras e Entradas no Estoque</h3>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table" id="tabela-entradas">
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Insumo</th>
+                            <th>Categoria</th>
+                            <th>Qtd Recebida</th>
+                            <th>Custo Unitário</th>
+                            <th>Custo Total</th>
+                            <th>Fornecedor</th>
+                            <th>NF / Lote</th>
+                            <th>Observação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-entradas">
+                        <tr><td colspan="9" class="text-center">Carregando histórico de compras...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Modal Inteligente de Entrada no Estoque -->
+<div id="modal-entrada" class="modal">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h4>Lançar Entrada de Insumo no Estoque</h4>
+            <button class="modal-close" onclick="fecharModal('modal-entrada')">&times;</button>
+        </div>
+        <form id="form-entrada" onsubmit="salvarEntradaEstoque(event)">
+            <div class="form-group">
+                <label>Selecione a Matéria-Prima (Ficha Técnica) *</label>
+                <select id="ent-catalogo-id" class="form-control" required onchange="aoSelecionarInsumoEntrada()">
+                    <option value="">Carregando catálogo...</option>
+                </select>
+                <small class="text-muted">Ainda não cadastrou este insumo? <a href="{{ url_for('main.materiais') }}" style="color: var(--gold-light);">Cadastre primeiro na Ficha Técnica</a>.</small>
+            </div>
+
+            <!-- Painel Informativo do Insumo Selecionado -->
+            <div id="ent-info-insumo" class="highlight-box" style="display: none;">
+                <div class="info-row">
+                    <span><strong>Categoria:</strong> <span id="info-cat-nome">-</span></span>
+                    <span><strong>Unidade:</strong> <span id="info-cat-unidade">-</span></span>
+                    <span><strong>Estoque Mínimo:</strong> <span id="info-cat-min">-</span></span>
+                </div>
+            </div>
+
+            <!-- Campos Específicos para Filamentos (Carretéis) -->
+            <div id="campos-entrada-filamento" class="highlight-box" style="display: none;">
+                <div class="box-title">🧵 Dados dos Carretéis Recebidos</div>
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label>Número de Carretéis *</label>
+                        <input type="number" id="ent-fil-qtd" class="form-control" value="1" min="1" step="1" oninput="calcularCustoTotal()">
+                    </div>
+                    <div class="form-group">
+                        <label>Peso de Cada Carretel (g)</label>
+                        <input type="number" id="ent-fil-peso" class="form-control" value="1000" step="10">
+                    </div>
+                    <div class="form-group">
+                        <label>Custo por Carretel (R$) *</label>
+                        <input type="number" id="ent-fil-custo-un" class="form-control" placeholder="110.00" step="0.01" oninput="calcularCustoTotal()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campos Específicos para Insumos Gerais (LEDs, Ímãs, etc.) -->
+            <div id="campos-entrada-geral" class="highlight-box" style="display: none;">
+                <div class="box-title">📦 Quantidade de Componentes Recebidos</div>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Quantidade Recebida *</label>
+                        <input type="number" id="ent-geral-qtd" class="form-control" value="10" min="1" step="1" oninput="calcularCustoTotal()">
+                    </div>
+                    <div class="form-group">
+                        <label>Custo Unitário (R$) *</label>
+                        <input type="number" id="ent-geral-custo-un" class="form-control" placeholder="2.50" step="0.01" oninput="calcularCustoTotal()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label>Valor Total da Compra (R$)</label>
+                    <input type="number" id="ent-custo-total" class="form-control" placeholder="0.00" step="0.01" readonly style="background: rgba(255,255,255,0.05); font-weight: 700; color: var(--gold-light);">
+                </div>
+                <div class="form-group">
+                    <label>Fornecedor / Loja</label>
+                    <input type="text" id="ent-fornecedor" class="form-control" placeholder="ex: Voolt3D Oficial, Loja do LED">
+                </div>
+                <div class="form-group">
+                    <label>Nota Fiscal / Lote</label>
+                    <input type="text" id="ent-nf" class="form-control" placeholder="ex: NF 12845 / Lote 09">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Observação / Destino (Opcional)</label>
+                <input type="text" id="ent-obs" class="form-control" placeholder="ex: Carretéis destinados à coleção de imagens sacras douradas">
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="fecharModal('modal-entrada')">Cancelar</button>
+                <button type="submit" class="btn btn-gold">Confirmar Entrada no Estoque</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/estoque.js') }}"></script>
+{% endblock %}
