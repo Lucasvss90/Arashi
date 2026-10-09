@@ -1,0 +1,508 @@
+{% extends "base.html" %}
+
+{% block title %}Engenharia de Produto • Parâmetros Slicer & Física da Peça - Arashi Maker{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Cabeçalho da Engenharia de Produto -->
+    <div class="page-header">
+        <div class="page-title-group">
+            <span class="page-badge">Manufatura Aditiva & Slicer • ARASHI Maker</span>
+            <h2>Engenharia de Produto • Parâmetros Slicer & Física da Peça</h2>
+            <p>Especificações cinemáticas, tempo de máquina 3MF, consumo volumétrico de filamento e padronização industrial.</p>
+        </div>
+        <div class="page-actions">
+            <button class="btn btn-gold" onclick="abrirModalNovoProduto()">+ Nova Peça / Slicer</button>
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline">🖨️ Fila de Produção (PCP)</a>
+        </div>
+    </div>
+
+    <!-- Cards com Indicadores no Topo -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-icon-wrapper gold-glow">
+                <span class="metric-icon">📐</span>
+            </div>
+            <div class="metric-info">
+                <span class="metric-label">Total de Peças Cadastradas</span>
+                <span class="metric-value" id="metric-total-pecas">33</span>
+                <small class="metric-sub" id="metric-total-sub">Peças no catálogo de engenharia</small>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon-wrapper green-glow">
+                <span class="metric-icon">⚡</span>
+            </div>
+            <div class="metric-info">
+                <span class="metric-label">Peças Fatiadas / Prontas</span>
+                <span class="metric-value" id="metric-fatiadas-prontas">28</span>
+                <small class="metric-sub" id="metric-fatiadas-sub">Status COMPLETO (Slicer OK)</small>
+            </div>
+        </div>
+
+        <div class="metric-card" id="card-pendentes">
+            <div class="metric-icon-wrapper red-glow">
+                <span class="metric-icon">⏳</span>
+            </div>
+            <div class="metric-info">
+                <span class="metric-label">Pendentes de Fatiamento</span>
+                <span class="metric-value" id="metric-pendentes">3</span>
+                <small class="metric-sub" id="metric-pendentes-sub">Status PENDENTE (Falta Slicer)</small>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon-wrapper blue-glow">
+                <span class="metric-icon">⏱️</span>
+            </div>
+            <div class="metric-info">
+                <span class="metric-label">Tempo Médio de Impressão</span>
+                <span class="metric-value" id="metric-tempo-medio">06:52</span>
+                <small class="metric-sub" id="metric-tempo-sub">Média por peça no slicer (HH:MM)</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros Rápidos no Topo por Linha -->
+    <div class="category-filters">
+        <button class="filter-pill active" onclick="filtrarLinha('TODOS', this)">
+            <span>🌐 Todos</span>
+            <span class="count-badge" id="count-todos">33</span>
+        </button>
+        <button class="filter-pill" onclick="filtrarLinha('Sacra & Devocional', this)">
+            <span>🕊️ Sacra & Devocional</span>
+            <span class="count-badge" id="count-sacra">15</span>
+        </button>
+        <button class="filter-pill" onclick="filtrarLinha('Luminárias & Seasons', this)">
+            <span>💡 Luminárias & Seasons</span>
+            <span class="count-badge" id="count-luminarias">7</span>
+        </button>
+        <button class="filter-pill" onclick="filtrarLinha('Geek & Colecionáveis', this)">
+            <span>🎮 Geek & Colecionáveis</span>
+            <span class="count-badge" id="count-geek">8</span>
+        </button>
+        <button class="filter-pill" onclick="filtrarLinha('OUTROS', this)">
+            <span>⚙️ Outras Linhas</span>
+            <span class="count-badge" id="count-outros">3</span>
+        </button>
+    </div>
+
+    <!-- Tabela Técnica do Slicer -->
+    <section class="panel">
+        <div class="panel-header">
+            <div class="panel-title-group">
+                <span class="panel-dot"></span>
+                <h3 id="titulo-tabela-engenharia">Fichas Técnicas & Parâmetros Slicer (33 peças)</h3>
+            </div>
+            <div class="search-box">
+                <input type="text" id="busca-engenharia" class="form-control form-control-sm" placeholder="🔍 Buscar por SKU, nome, material, cor..." oninput="filtrarPorTexto()">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table" id="tabela-engenharia">
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">SKU</th>
+                        <th>Nome da Peça & Linha</th>
+                        <th>Material & Cores</th>
+                        <th style="text-align: center;">Tempo Slicer</th>
+                        <th style="text-align: center;">Massa Total</th>
+                        <th>Altura Camada / Infill</th>
+                        <th style="text-align: center;">Status Ficha Técnica</th>
+                        <th style="text-align: right; width: 140px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-engenharia">
+                    <tr>
+                        <td colspan="8" class="text-center" style="padding: 2rem;">Carregando fichas técnicas...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<!-- MODAL 1: Detalhes da Ficha Técnica -->
+<!-- MODAL 1: Detalhes da Ficha Técnica (Dashboard 2 Colunas) -->
+<div class="modal" id="modal-detalhes-produto">
+    <div class="modal-content modal-dashboard-container">
+        <div class="modal-header" style="margin-bottom: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                <span class="sku-code" id="det-sku">SKU0000000</span>
+                <h4 id="det-nome">Nome da Peça</h4>
+            </div>
+            <button type="button" class="modal-close" onclick="fecharModal('modal-detalhes-produto')">&times;</button>
+        </div>
+
+        <div style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; background: rgba(0,0,0,0.25); padding: 0.5rem 0.85rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span style="font-size: 0.78rem; color: var(--silver-dark); text-transform: uppercase; letter-spacing: 0.5px;">Linha:</span>
+                <strong id="det-linha" style="color: var(--gold-light);">-</strong>
+                <span style="color: var(--silver-dark); margin: 0 0.25rem;">•</span>
+                <div id="det-arquivo-3mf" style="font-size: 0.82rem; color: var(--silver);"></div>
+            </div>
+            <div id="det-status-container"></div>
+        </div>
+
+        <!-- Layout Dashboard Amplo em 2 Colunas -->
+        <div class="modal-dashboard-grid">
+            <!-- COLUNA ESQUERDA: Especificações Slicer & Pós-Processamento -->
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Parâmetros de Fatiamento (Slicer) -->
+                <div class="highlight-box" style="margin-bottom: 0;">
+                    <div class="box-title" style="margin-bottom: 0.75rem;">📐 Parâmetros de Fatiamento (Slicer)</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <div class="tech-spec-item">
+                            <span class="tech-spec-label">Material Primário</span>
+                            <span class="tech-spec-value" id="det-material">PLA</span>
+                        </div>
+                        <div class="tech-spec-item">
+                            <span class="tech-spec-label">Cores Planejadas</span>
+                            <span class="tech-spec-value" id="det-cores" style="font-size: 0.88rem;">-</span>
+                        </div>
+                        <div class="tech-spec-item">
+                            <span class="tech-spec-label">Tempo Fatiado Slicer</span>
+                            <span class="tech-spec-value" id="det-tempo">00:00 h</span>
+                        </div>
+                        <div class="tech-spec-item">
+                            <span class="tech-spec-label">Massa Total Fatiada</span>
+                            <span class="tech-spec-value" id="det-consumo">0.0 g</span>
+                        </div>
+                        <div class="tech-spec-item">
+                            <span class="tech-spec-label">Altura de Camada</span>
+                            <span class="tech-spec-value" id="det-camada">0.20 mm</span>
+                        </div>
+                        <div class="tech-spec-item">
+                            <span class="tech-spec-label">Infill Padrão</span>
+                            <span class="tech-spec-value" id="det-infill" style="font-size: 0.88rem;">15% Gyroid</span>
+                        </div>
+                        <div class="tech-spec-item" style="grid-column: span 2; background: rgba(212, 175, 55, 0.06); padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.25);">
+                            <span class="tech-spec-label" style="color: var(--gold-light);">Preço Sugerido de Venda</span>
+                            <span class="tech-spec-value" id="det-preco" style="color: var(--gold-light); font-size: 1.15rem;">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pós-Processamento e Montagem (Edição Direta e Ágil) -->
+                <div class="highlight-box" style="margin-bottom: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+                        <div class="box-title" style="margin-bottom: 0;">🛠️ Instruções de Pós-Processamento & Montagem</div>
+                        <span id="det-instrucoes-status" style="font-size: 0.75rem;"></span>
+                    </div>
+                    <textarea id="det-instrucoes" class="form-control" rows="3" placeholder="Orientações sobre suporte, acabamento, cura, imãs ou cola..." style="font-size: 0.84rem; line-height: 1.4; resize: vertical; margin-bottom: 0.5rem;"></textarea>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button type="button" class="btn btn-outline btn-sm" id="btn-salvar-notas-detalhe" onclick="salvarNotasPosProcesso()" style="font-size: 0.78rem; padding: 0.3rem 0.75rem;">
+                            💾 Salvar Notas
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUNA DIREITA: Estrutura de Materiais Complementares (BOM) -->
+            <div>
+                <div class="highlight-box" style="margin-bottom: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <div class="box-title" style="margin-bottom: 0;">📦 Insumos Complementares (BOM)</div>
+                        <div style="font-size: 0.8rem; color: var(--silver); background: rgba(0,0,0,0.3); padding: 0.2rem 0.6rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.08);">
+                            Total Insumos Extras: <strong id="det-bom-total-custo" style="color: var(--gold-light); font-size: 0.95rem;">R$ 0,00</strong>
+                        </div>
+                    </div>
+
+                    <!-- Tabela de Insumos da BOM 100% de largura (Sem Rolagem Dupla) -->
+                    <table class="data-table" style="width: 100%; margin: 0 0 0.85rem 0; font-size: 0.82rem;" id="tabela-bom-detalhes">
+                        <thead>
+                            <tr>
+                                <th>Insumo / Componente</th>
+                                <th style="text-align: center; width: 60px;">Qtd</th>
+                                <th style="text-align: right; width: 85px;">Custo Unit.</th>
+                                <th style="text-align: right; width: 85px;">Custo Total</th>
+                                <th style="text-align: center; width: 45px;">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-bom-detalhes">
+                            <!-- Itens carregados via JS -->
+                        </tbody>
+                    </table>
+
+                    <!-- Formulário para Adicionar Insumo à BOM (2 Linhas Confortáveis) -->
+                    <form id="form-add-bom" onsubmit="adicionarInsumoBOM(event)" style="background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 8px; border: 1px dashed rgba(212,175,55,0.3);">
+                        <div style="font-size: 0.76rem; font-weight: 600; color: var(--gold-light); margin-bottom: 0.4rem;">
+                            ➕ Adicionar Insumo Extra ao Produto
+                        </div>
+                        <!-- Linha 1: Dropdown 100% de largura com nome e preço visíveis -->
+                        <div class="form-group" style="margin-bottom: 0.5rem;">
+                            <label style="font-size: 0.72rem; margin-bottom: 0.2rem; color: var(--silver);">Insumo do Catálogo *</label>
+                            <select id="bom-select-catalogo" class="form-control form-control-sm" style="width: 100%;" required onchange="aoSelecionarInsumoCatalogo()">
+                                <option value="">Carregando catálogo...</option>
+                            </select>
+                        </div>
+                        <!-- Linha 2: Quantidade, Custo, Observação e Botão -->
+                        <div style="display: grid; grid-template-columns: 80px 90px 1fr auto; gap: 0.5rem; align-items: flex-end;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-size: 0.72rem; margin-bottom: 0.2rem; color: var(--silver);">Qtd *</label>
+                                <input type="number" id="bom-input-quantidade" class="form-control form-control-sm" step="0.1" min="0.1" value="1" required oninput="atualizarPreviewCustoBOM()">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-size: 0.72rem; margin-bottom: 0.2rem; color: var(--silver);">Custo (R$)</label>
+                                <input type="number" id="bom-input-custo" class="form-control form-control-sm" step="0.01" min="0" placeholder="0.00" oninput="atualizarPreviewCustoBOM()">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-size: 0.72rem; margin-bottom: 0.2rem; color: var(--silver);">Obs / Aplicação</label>
+                                <input type="text" id="bom-input-obs" class="form-control form-control-sm" placeholder="ex: Rabicho Bivolt, Cola...">
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-gold btn-sm" id="btn-adicionar-bom" style="white-space: nowrap; height: 32px; padding: 0 0.85rem;">
+                                    + Adicionar Insumo
+                                </button>
+                            </div>
+                        </div>
+                        <div id="bom-hint-custo" style="font-size: 0.72rem; color: var(--silver-dark); margin-top: 0.35rem;"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 1.25rem; justify-content: space-between;">
+            <div>
+                <button type="button" class="btn btn-outline" onclick="abrirModalEdicaoDoDetalhe()">✏️ Editar Todos os Parâmetros Slicer</button>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <button type="button" class="btn btn-outline" onclick="fecharModal('modal-detalhes-produto')">Fechar</button>
+                <button type="button" class="btn btn-gold" onclick="lancarPCPDoDetalhe()">🖨️ Lançar no PCP</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: Editar Parâmetros do Slicer -->
+<div class="modal" id="modal-editar-produto">
+    <div class="modal-content modal-dashboard-container">
+        <div class="modal-header">
+            <h4>✏️ Editar Parâmetros do Slicer & Ficha Técnica</h4>
+            <button type="button" class="modal-close" onclick="fecharModal('modal-editar-produto')">&times;</button>
+        </div>
+
+        <form id="form-editar-produto" onsubmit="salvarEdicaoProduto(event)">
+            <input type="hidden" id="edit-id">
+
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label>SKU (Código 10 Dígitos)</label>
+                    <input type="text" id="edit-sku" class="form-control" readonly style="opacity: 0.8;">
+                </div>
+                <div class="form-group">
+                    <label>Nome da Peça *</label>
+                    <input type="text" id="edit-nome" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Linha de Produto *</label>
+                    <input type="text" id="edit-linha" class="form-control" list="lista-linhas" required>
+                    <datalist id="lista-linhas">
+                        <option value="Sacra & Devocional">
+                        <option value="Luminárias & Seasons">
+                        <option value="Geek & Colecionáveis">
+                        <option value="Geek & Pets">
+                        <option value="Geek & Utilitários">
+                        <option value="Geek & Decoração">
+                        <option value="Utilitários">
+                        <option value="Projetos Especiais">
+                    </datalist>
+                </div>
+            </div>
+
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label>Material *</label>
+                    <input type="text" id="edit-material" class="form-control" placeholder="ex: PLA, PLA Silk, PETG" required>
+                </div>
+                <div class="form-group">
+                    <label>Cores Planejadas</label>
+                    <input type="text" id="edit-cores" class="form-control" placeholder="ex: Marrom Escuro + Dourado">
+                </div>
+                <div class="form-group">
+                    <label>Status da Engenharia *</label>
+                    <select id="edit-status" class="form-control" required>
+                        <option value="COMPLETO (OK)">COMPLETO (OK) - Fatiado & Testado</option>
+                        <option value="PENDENTE (Falta Slicer)">PENDENTE (Falta Slicer) - Não Fatiado</option>
+                        <option value="COMPLETO (Tryout)">COMPLETO (Tryout) - Em Validação</option>
+                        <option value="Sob Encomenda">Sob Encomenda</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label>Tempo Slicer (Minutos Totais) *</label>
+                    <input type="number" id="edit-tempo-min" class="form-control" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Massa Total Fatiada (g) *</label>
+                    <input type="number" step="0.1" id="edit-consumo" class="form-control" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Preço Base de Venda (R$)</label>
+                    <input type="number" step="0.01" id="edit-preco" class="form-control" min="0">
+                </div>
+            </div>
+
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label>Altura de Camada (mm)</label>
+                    <input type="number" step="0.01" id="edit-camada" class="form-control" value="0.20">
+                </div>
+                <div class="form-group">
+                    <label>Infill / Preenchimento Padrão</label>
+                    <input type="text" id="edit-infill" class="form-control" placeholder="ex: 15% Gyroid, 15% Grid">
+                </div>
+                <div class="form-group">
+                    <label>Nome do Arquivo .3MF</label>
+                    <input type="text" id="edit-3mf" class="form-control" placeholder="ex: RPN02U00MD_RogaiPorNos.3mf">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Instruções de Pós-Processamento, Suporte e Montagem</label>
+                <textarea id="edit-instrucoes" class="form-control" rows="3" placeholder="Orientações sobre suporte tipo árvore, pintura dourada, fixação de ímãs ou cola..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="fecharModal('modal-editar-produto')">Cancelar</button>
+                <button type="submit" class="btn btn-gold">Salvar Alterações</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL 3: Cadastrar Nova Peça Técnica -->
+<div class="modal" id="modal-novo-produto">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h4>➕ Cadastrar Nova Peça no Slicer & Engenharia</h4>
+            <button type="button" class="modal-close" onclick="fecharModal('modal-novo-produto')">&times;</button>
+        </div>
+
+        <form id="form-novo-produto" onsubmit="salvarNovoProduto(event)">
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label>SKU (10 Dígitos) *</label>
+                    <input type="text" id="novo-sku" class="form-control" maxlength="10" placeholder="ex: SFA01G000M" required style="font-family: monospace; text-transform: uppercase;">
+                </div>
+                <div class="form-group">
+                    <label>Nome da Peça *</label>
+                    <input type="text" id="novo-nome" class="form-control" placeholder="ex: Sagrada Família Grande" required>
+                </div>
+                <div class="form-group">
+                    <label>Linha de Produto *</label>
+                    <input type="text" id="novo-linha" class="form-control" list="lista-linhas" placeholder="ex: Sacra & Devocional" required>
+                </div>
+            </div>
+
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label>Material *</label>
+                    <input type="text" id="novo-material" class="form-control" placeholder="ex: PLA" value="PLA" required>
+                </div>
+                <div class="form-group">
+                    <label>Cores Planejadas</label>
+                    <input type="text" id="novo-cores" class="form-control" placeholder="ex: Branco + Dourado">
+                </div>
+                <div class="form-group">
+                    <label>Status da Engenharia *</label>
+                    <select id="novo-status" class="form-control" required>
+                        <option value="COMPLETO (OK)" selected>COMPLETO (OK) - Fatiado & Pronto</option>
+                        <option value="PENDENTE (Falta Slicer)">PENDENTE (Falta Slicer) - Aguardando 3MF</option>
+                        <option value="COMPLETO (Tryout)">COMPLETO (Tryout) - Em Teste</option>
+                        <option value="Sob Encomenda">Sob Encomenda</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label>Tempo Slicer (Minutos) *</label>
+                    <input type="number" id="novo-tempo-min" class="form-control" min="0" value="0" placeholder="ex: 150" required>
+                </div>
+                <div class="form-group">
+                    <label>Massa Total Fatiada (g) *</label>
+                    <input type="number" step="0.1" id="novo-consumo" class="form-control" min="0" value="0.0" placeholder="ex: 60.0" required>
+                </div>
+                <div class="form-group">
+                    <label>Preço Sugerido de Venda (R$)</label>
+                    <input type="number" step="0.01" id="novo-preco" class="form-control" value="0.00">
+                </div>
+            </div>
+
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label>Altura de Camada (mm)</label>
+                    <input type="number" step="0.01" id="novo-camada" class="form-control" value="0.20">
+                </div>
+                <div class="form-group">
+                    <label>Infill / Preenchimento Padrão</label>
+                    <input type="text" id="novo-infill" class="form-control" value="15% Gyroid">
+                </div>
+                <div class="form-group">
+                    <label>Nome do Arquivo .3MF</label>
+                    <input type="text" id="novo-3mf" class="form-control" placeholder="ex: SFA01G000M_SagradaFamilia.3mf">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Instruções de Pós-Processamento e Montagem</label>
+                <textarea id="novo-instrucoes" class="form-control" rows="2" placeholder="Recomendações técnicas de acabamento..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="fecharModal('modal-novo-produto')">Cancelar</button>
+                <button type="submit" class="btn btn-gold">Cadastrar Peça na Engenharia</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL 4: Lançar Impressão Direto no PCP -->
+<div class="modal" id="modal-lancar-pcp">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4>🖨️ Lançar Ordem de Impressão (PCP)</h4>
+            <button type="button" class="modal-close" onclick="fecharModal('modal-lancar-pcp')">&times;</button>
+        </div>
+
+        <form id="form-lancar-pcp" onsubmit="confirmarLancarPCP(event)">
+            <input type="hidden" id="pcp-produto-id">
+
+            <div class="highlight-box">
+                <div class="box-title">Peça Selecionada</div>
+                <div id="pcp-produto-nome" style="font-weight: 700; color: #ffffff; font-size: 0.95rem;">-</div>
+                <div id="pcp-consumo-info" style="font-size: 0.85rem; color: var(--gold-light); margin-top: 0.25rem;">-</div>
+            </div>
+
+            <div class="form-group">
+                <label>Carretel de Filamento em Estoque *</label>
+                <select id="pcp-filamento-id" class="form-control" required>
+                    <option value="">Carregando carretéis...</option>
+                </select>
+                <small style="color: var(--silver-dark); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+                    Ao concluir a impressão, o peso será debitado automaticamente do carretel físico selecionado.
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label>Quantidade de Peças a Imprimir *</label>
+                <input type="number" id="pcp-quantidade" class="form-control" min="1" value="1" required>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="fecharModal('modal-lancar-pcp')">Cancelar</button>
+                <button type="submit" class="btn btn-gold">Adicionar à Fila de Impressão</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/engenharia.js') }}"></script>
+{% endblock %}
