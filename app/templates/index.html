@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Produção & PCP - Arashi Maker{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Banner de Boas-Vindas Institucional -->
+    <div class="hero-banner">
+        <div class="hero-banner-overlay"></div>
+        <div class="hero-banner-content">
+            <div class="hero-text">
+                <span class="hero-badge">⚡ Ateliê de Manufatura Aditiva & PCP Industrial</span>
+                <h2>Produção de Arte Sacra & Peças Exclusivas</h2>
+                <p>Controle de consumo exato de carretéis, fila de impressão e precificação de peças.</p>
+            </div>
+            <div class="hero-actions">
+                <button class="btn btn-gold btn-sm" onclick="abrirModalNovaOrdem()">+ Lançar Impressão</button>
+                <a href="{{ url_for('main.estoque') }}" class="btn btn-outline btn-sm">📦 Entrada de Estoque</a>
+                <a href="{{ url_for('main.materiais') }}" class="btn btn-outline btn-sm">📋 Ficha Técnica</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métricas do Dashboard -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-icon-wrapper gold-glow">
+                <span class="metric-icon">🧵</span>
+            </div>
+            <div class="metric-info">
+                <span class="metric-label">Carretéis em Estoque</span>
+                <span class="metric-value" id="metric-carreteis">-</span>
+                <small class="metric-sub"><a href="{{ url_for('main.estoque') }}" style="color: var(--gold-light); text-decoration: none;">Ver almoxarifado →</a></small>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon-wrapper blue-glow">
+                <span class="metric-icon">⏳</span>
+            </div>
+            <div class="metric-info">
+                <span class="metric-label">Peças na Fila (PCP)</span>
+                <span class="metric-value" id="metric-fila">-</span>
+                <small class="metric-sub">Aguardando início</small>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon-wrapper green-glow">
+                <span class="metric-icon">⚙️</span>
+            </div>
+            <div class="metric-info">
+                <span class="metric-label">Imprimindo Agora</span>
+                <span class="metric-value" id="metric-rodando">-</span>
+                <small class="metric-sub">Em execução nas impressoras</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações e Abas Rápidas -->
+    <div class="main-sections">
+        <!-- Fila de Impressão (PCP) -->
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <span class="panel-dot"></span>
+                    <h3>🖨️ Fila de Impressão (PCP) & Baixa Automática de Filamento</h3>
+                </div>
+                <button class="btn btn-gold btn-sm" onclick="abrirModalNovaOrdem()">+ Nova Impressão</button>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table" id="tabela-pcp">
+                    <thead>
+                        <tr>
+                            <th style="width: 70px;">ID</th>
+                            <th>Pedido / Cliente</th>
+                            <th>Produto / Peça Sacra</th>
+                            <th>Carretel Utilizado</th>
+                            <th style="text-align: center; width: 60px;">Qtd</th>
+                            <th style="text-align: center; width: 110px;">Status</th>
+                            <th style="text-align: center; width: 220px;">Ação Industrial</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-pcp">
+                        <tr><td colspan="7" class="text-center">Carregando ordens de produção...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Estoque de Filamentos e Produtos -->
+        <div class="two-columns">
+            <!-- Filamentos Ativos -->
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title-group">
+                        <span class="panel-dot"></span>
+                        <h3>🧵 Carretéis em Uso</h3>
+                    </div>
+                    <a href="{{ url_for('main.estoque') }}" class="btn btn-outline btn-sm">Ver Todos</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="tabela-filamentos">
+                        <thead>
+                            <tr>
+                                <th>Marca</th>
+                                <th>Polímero</th>
+                                <th>Cor</th>
+                                <th>Peso Restante</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-filamentos">
+                            <tr><td colspan="4" class="text-center">Carregando carretéis...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Produtos -->
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title-group">
+                        <span class="panel-dot"></span>
+                        <h3>📦 Catálogo de Peças (Arte Sacra & Home)</h3>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="abrirModalProduto()">+ Cadastrar Peça</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="tabela-produtos">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Nome</th>
+                                <th>Consumo</th>
+                                <th>Preço Venda</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-produtos">
+                            <tr><td colspan="4" class="text-center">Carregando peças...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nova Ordem -->
+<div id="modal-ordem" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4>Lançar Ordem de Impressão</h4>
+            <button class="modal-close" onclick="fecharModal('modal-ordem')">&times;</button>
+        </div>
+        <form id="form-ordem" onsubmit="criarOrdem(event)">
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>Vincular a Pedido da Esteira (Opcional)</label>
+                <select id="ordem-pedido-id" class="form-control" onchange="aoSelecionarPedidoNoPCP()">
+                    <option value="">-- Ordem Avulsa / Sem Pedido --</option>
+                </select>
+                <small style="color: var(--silver-dark); font-size: 0.75rem; display: block; margin-top: 0.25rem;">
+                    Ao vincular um pedido, o fluxo operacional avança automaticamente para PRODUÇÃO e depois ACABAMENTO.
+                </small>
+            </div>
+            <div class="form-group">
+                <label>Peça / Produto Sacro *</label>
+                <select id="ordem-produto" class="form-control" required></select>
+            </div>
+            <div class="form-group">
+                <label>Carretel de Filamento *</label>
+                <select id="ordem-filamento" class="form-control" required></select>
+            </div>
+            <div class="form-group">
+                <label>Quantidade de Cópias *</label>
+                <input type="number" id="ordem-quantidade" class="form-control" value="1" min="1" required>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="fecharModal('modal-ordem')">Cancelar</button>
+                <button type="submit" class="btn btn-gold">Lançar na Fila</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Novo Produto -->
+<div id="modal-produto" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4>Cadastrar Peça / Produto</h4>
+            <button class="modal-close" onclick="fecharModal('modal-produto')">&times;</button>
+        </div>
+        <form id="form-produto" onsubmit="criarProduto(event)">
+            <div class="form-group">
+                <label>SKU / Código Único *</label>
+                <input type="text" id="prod-sku" class="form-control" placeholder="ex: SACRA-NS-APARECIDA-25CM" required>
+            </div>
+            <div class="form-group">
+                <label>Nome da Peça *</label>
+                <input type="text" id="prod-nome" class="form-control" placeholder="ex: Imagem Nossa Senhora Aparecida 25cm" required>
+            </div>
+            <div class="form-group">
+                <label>Consumo Estimado de Filamento (g) *</label>
+                <input type="number" id="prod-consumo" class="form-control" placeholder="140.0" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label>Preço de Venda Sugerido (R$) *</label>
+                <input type="number" id="prod-preco" class="form-control" placeholder="120.00" step="0.01" required>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="fecharModal('modal-produto')">Cancelar</button>
+                <button type="submit" class="btn btn-gold">Cadastrar Peça</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}

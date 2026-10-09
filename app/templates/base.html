@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Arashi Maker - PCP & Ateliê 3D{% endblock %}</title>
+    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/logo.jpg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    <div class="ambient-glow"></div>
+
+    <header class="navbar">
+        <div class="navbar-container">
+            <a href="{{ url_for('main.index') }}" class="brand">
+                <div class="brand-logo-frame">
+                    <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="Logo Arashi Maker" class="brand-logo-img">
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">ARASHI <strong class="gold-gradient-text">MAKER</strong></span>
+                    <span class="brand-subtitle">Arte Sacra & Home • Brasil</span>
+                </div>
+            </a>
+
+            {% if current_user.is_authenticated %}
+                <nav class="main-nav-menu">
+                    <a href="{{ url_for('main.index') }}" class="nav-item {% if request.path == '/' %}active{% endif %}">
+                        <span class="nav-icon">🖨️</span>
+                        <span>Produção (PCP)</span>
+                    </a>
+                    <a href="{{ url_for('main.engenharia') }}" class="nav-item {% if request.path == '/engenharia' %}active{% endif %}">
+                        <span class="nav-icon">📐</span>
+                        <span>Engenharia</span>
+                    </a>
+                    <a href="{{ url_for('main.custos') }}" class="nav-item {% if request.path == '/custos' %}active{% endif %}">
+                        <span class="nav-icon">📊</span>
+                        <span>Custos & Controladoria</span>
+                    </a>
+                    <a href="{{ url_for('main.materiais') }}" class="nav-item {% if request.path == '/materiais' %}active{% endif %}">
+                        <span class="nav-icon">📋</span>
+                        <span>Ficha Técnica</span>
+                    </a>
+                    <a href="{{ url_for('main.estoque') }}" class="nav-item {% if request.path == '/estoque' %}active{% endif %}">
+                        <span class="nav-icon">📦</span>
+                        <span>Estoque & Entradas</span>
+                    </a>
+                    <a href="{{ url_for('main.compras') }}" class="nav-item {% if request.path == '/compras' %}active{% endif %}">
+                        <span class="nav-icon">🛒</span>
+                        <span>Compras & Encomendas</span>
+                    </a>
+                    <a href="{{ url_for('main.pedidos') }}" class="nav-item {% if request.path == '/pedidos' %}active{% endif %}">
+                        <span class="nav-icon">📑</span>
+                        <span>Pedidos</span>
+                    </a>
+                    <a href="{{ url_for('main.monitoramento') }}" class="nav-item {% if request.path == '/monitoramento' %}active{% endif %}" style="border: 1px solid rgba(212,175,55,0.4); background: rgba(212,175,55,0.08);">
+                        <span class="nav-icon">📺</span>
+                        <span style="color: var(--gold-light); font-weight: 700;">TV Andon</span>
+                    </a>
+                </nav>
+            {% endif %}
+
+            <nav class="nav-links">
+                {% if current_user.is_authenticated %}
+                    <div class="user-pill">
+                        <span class="user-status-dot"></span>
+                        <span class="user-greeting">Operador: <strong>{{ current_user.username }}</strong></span>
+                    </div>
+                    <a href="{{ url_for('main.logout') }}" class="btn btn-outline btn-sm">Sair</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages % logic %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2026 <strong>Arashi Maker</strong> — Ateliê de Arte Sacra & Home Brasil. Todos os direitos reservados.</p>
+            <span class="footer-badge">PCP Industrial & Impressão 3D</span>
+        </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
